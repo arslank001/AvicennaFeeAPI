@@ -87,7 +87,7 @@ namespace AvicennaFeeAPI.Controllers
 					ResponseCode = BillIquiryResponseCodes.ConsumerNumberBlock;
 					Message = "Consumer Number Block!";
 				}
-
+			    var Test = "VS iwth github testing";
 				//Total fee calculation
 				int totalAmount = Convert.ToInt32(inquiryResult.tution) + Convert.ToInt32(inquiryResult.allied) + Convert.ToInt32(inquiryResult.arrears) - Convert.ToInt32(inquiryResult.concession);
 
@@ -104,7 +104,8 @@ namespace AvicennaFeeAPI.Controllers
 					DatePaid = inquiryResult.tran_date?.ToString("yyyyMMdd") ?? string.Empty,
 					AmountPaid = inquiryResult.transaction_amount?.ToString() ?? string.Empty,
 					TranAuthId = inquiryResult.tran_auth_id?.ToString() ?? string.Empty,
-					//Reserved = request.Reserved
+					//Reserved = request.Reserved.
+					//Testing
 				};
 
 				return Ok(new
