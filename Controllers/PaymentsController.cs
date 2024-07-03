@@ -26,8 +26,8 @@ namespace AvicennaFeeAPI.Controllers
 		[HttpPost("BillInquiry")]
 		public async Task<IActionResult> BillInquiry([FromBody] InquiryRequest request)
 		{
-			//try
-			//{
+			try
+			{
 				// Validate request
 				if (request == null || string.IsNullOrEmpty(request.ConsumerNumber.ToString()) || string.IsNullOrEmpty(request.BankMnemonic))
 				{
@@ -87,7 +87,7 @@ namespace AvicennaFeeAPI.Controllers
 					ResponseCode = BillIquiryResponseCodes.ConsumerNumberBlock;
 					Message = "Consumer Number Block!";
 				}
-			    var Test = "VS iwth github testing";
+
 				//Total fee calculation
 				int totalAmount = Convert.ToInt32(inquiryResult.tution) + Convert.ToInt32(inquiryResult.allied) + Convert.ToInt32(inquiryResult.arrears) - Convert.ToInt32(inquiryResult.concession);
 
@@ -105,20 +105,15 @@ namespace AvicennaFeeAPI.Controllers
 					AmountPaid = inquiryResult.transaction_amount?.ToString() ?? string.Empty,
 					TranAuthId = inquiryResult.tran_auth_id?.ToString() ?? string.Empty,
 					//Reserved = request.Reserved.
-					//Testing
 				};
 
-				return Ok(new
-				{
-					ResponseCode = ResponseCode,
-					Message = Message,		
-					Data = response
-				});
-			//}
-			//catch (Exception ex)
-			//{
-			//	return StatusCode(500, new { ResponseCode = ResponseCodes.UnknownError, Message = "An unknown error occurred", Details = ex.Message });
-			//}
+				return Ok ( new { ResponseCode = ResponseCode, Message = Message, Data = response });
+
+		     }
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { ResponseCode = ResponseCodes.UnknownError, Message = "An unknown error occurred", Details = ex.Message });
+			}
 		}
 
 		//[HttpPost("BillPayment")]
