@@ -98,7 +98,8 @@ namespace AvicennaFeeAPI.Controllers
 					ConsumerDetail = inquiryResult.sid?.ToString() ?? string.Empty,
 					BillStatus = BillStatus,
 					DueDate = inquiryResult.duedate?.ToString("yyyyMMdd") ?? string.Empty,
-					AmountWithinDueDate = totalAmount.ToString() ?? string.Empty,
+                    ValidityDate = inquiryResult.validity_date?.ToString("yyyyMMdd") ?? string.Empty,
+                    AmountWithinDueDate = totalAmount.ToString() ?? string.Empty,
 					AmountAfterDueDate = (totalAmount + Fine).ToString(),
 			        BillingMonth = inquiryResult.duedate?.ToString("yyMM") ?? string.Empty,
 					DatePaid = inquiryResult.tran_date?.ToString("yyyyMMdd") ?? string.Empty,
@@ -116,50 +117,54 @@ namespace AvicennaFeeAPI.Controllers
 			}
 		}
 
-		//[HttpPost("BillPayment")]
-		//public async Task<IActionResult> BillPayment([FromBody] BillPaymentRequest request)
-		//{
-		//	try
-		//	{
-		//		// Validate request
-		//		if (request == null || string.IsNullOrEmpty(request.ConsumerNumber) || string.IsNullOrEmpty(request.BankMnemonic) || request.Amount <= 0)
-		//		{
-		//			return BadRequest(new { ResponseCode = ResponseCodes.InvalidData, Message = "Invalid data" });
-		//		}
+		[HttpPost("BillPayment")]
+		public async Task<IActionResult> BillPayment([FromBody] BillPaymentRequest request)
+		{
+			try
+			{
+				// Validate request
+				if (request == null || string.IsNullOrEmpty(request.ConsumerNumber.ToString()) || string.IsNullOrEmpty(request.BankMnemonic))
+				{
+					return BadRequest(new { ResponseCode = ResponseCodes.InvalidData, Message = "Invalid data" });
+				}
 
-		//		var bill = await _context.uw_regular_semester_student_fee
-		//			.Where(b => b.ConsumerNumber == request.ConsumerNumber && b.BankMnemonic == request.BankMnemonic)
-		//			.FirstOrDefaultAsync();
+				//var bill = await _context.uw_regular_semester_student_fee
+				//	.Where(b => b.ConsumerNumber == request.ConsumerNumber && b.BankMnemonic == request.BankMnemonic)
+				//	.FirstOrDefaultAsync();
+                var PaymentResult = await _context.uw_regular_semester_student_fee.Where(b => b.consumer_number == request.ConsumerNumber && b.bank_mnemonic == request.BankMnemonic).FirstOrDefaultAsync();
 
-		//		if (bill == null)
-		//		{
-		//			return NotFound(new { ResponseCode = ResponseCodes.ConsumerNumberNotFound, Message = "Consumer number does not exist" });
-		//		}
+                if (PaymentResult == null)
+				{
+					return NotFound(new { ResponseCode = ResponseCodes.ConsumerNumberNotFound, Message = "Consumer number does not exist" });
+				}
 
-		//		if (bill.Status == "Paid")
-		//		{
-		//			return BadRequest(new { ResponseCode = ResponseCodes.BillAlreadyPaid, Message = "Bill has already been paid" });
-		//		}
+				if (PaymentResult.feedeposit.ToString() == "True")
+				{
+					return BadRequest(new { ResponseCode = ResponseCodes.BillAlreadyPaid, Message = "Bill has already been paid" });
+				}
 
-		//		// Process the payment
-		//		bill.Status = "Paid";
-		//		bill.PaymentDate = DateTime.Now;
-		//		bill.AmountPaid = request.Amount;
+                // Process the payment
+                PaymentResult.tran_auth_id = request.TranAuthId;
+                PaymentResult.feedeposit = true;
+				PaymentResult.depositdate = request.TranDate;
+                PaymentResult.tran_time = request.TranTime;		
+				PaymentResult.bank_mnemonic = request.BankMnemonic;
+                PaymentResult.transaction_amount = request.TransactionAmount;
 
-		//		_context.uw_regular_semester_student_fee.Update(bill);
-		//		await _context.SaveChangesAsync();
+				_context.uw_regular_semester_student_fee.Update(PaymentResult);
+				await _context.SaveChangesAsync();
 
-		//		return Ok(new
-		//		{
-		//			ResponseCode = ResponseCodes.Success,
-		//			Message = "Bill payment successful",
-		//			Data = bill
-		//		});
-		//	}
-		//	catch (Exception ex)
-		//	{
-		//		return StatusCode(500, new { ResponseCode = ResponseCodes.UnknownError, Message = "An unknown error occurred", Details = ex.Message });
-		//	}
-		//}
+				return Ok(new
+				{
+					ResponseCode = ResponseCodes.Success,
+					Message = "Bill payment successful",
+					Data = PaymentResult
+                });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { ResponseCode = ResponseCodes.UnknownError, Message = "An unknown error occurred", Details = ex.Message });
+			}
+		}
 	}
 }

@@ -5,7 +5,8 @@
 		public string ResponseCode { get; set; }
 		public string ConsumerDetail { get; set; }
 		public string BillStatus { get; set; }
-		public string DueDate { get; set; }
+        public string ValidityDate { get; set; }
+        public string DueDate { get; set; }
 		public string AmountWithinDueDate { get; set; }
 		public string AmountAfterDueDate { get; set; }
 		public string BillingMonth { get; set; }

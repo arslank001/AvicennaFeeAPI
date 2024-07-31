@@ -22,7 +22,7 @@ namespace AvicennaFeeAPI.Models
 		public string? remarks { get; set; } // varchar(MAX) Checked
 		public string? csession { get; set; } // varchar(10) Checked
 		public DateTime? vdate { get; set; } // datetime Checked
-		public DateTime? depositdate { get; set; } // datetime Checked
+		public DateOnly? depositdate { get; set; } // datetime Checked
 		public bool? feedeposit { get; set; } // bit Checked
 		public int? scholorship { get; set; } // Checked
 		public bool? barcode { get; set; } // bit Checked
