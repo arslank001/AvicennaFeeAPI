@@ -9,5 +9,6 @@
 		public const string InvalidData = "04"; // Invalid Data
 		public const string ServiceFail = "05"; // Service Fail
 		public const string BillAlreadyPaid = "06"; // Bill Already Paid
-	}
+        public const string BillExpired = "07"; // Bill is Expired
+    }
 }
