@@ -4,28 +4,28 @@ namespace AvicennaFeeAPI.Models
 {
 	public class uw_student
 	{
-		[Key]
-		public int stuid { get; set; }
-		public int? sid { get; set; }
-		public string? sname { get; set; }
-		public int? progid { get; set; }
-		public string? asession { get; set; }
-		public string? csession { get; set; }
-		public string? section { get; set; }
+        [Key]
+        public int stuid { get; set; }
+        public string sid { get; set; }
+		public string sname { get; set; }
+		public int progid { get; set; }
+		public string asession { get; set; }
+		public string csession { get; set; }
+		public string section { get; set; }
 		public bool? isactive { get; set; }
 		public string? status { get; set; }
-		public int? formid { get; set; }
+		public string? formid { get; set; }
 		public string? ctype { get; set; }
-		public bool? graduate { get; set; }
+		public string? graduate { get; set; }
 		public string? email { get; set; }
 		public string? tel { get; set; }
 		public string? mobile { get; set; }
-		public DateTime? dob { get; set; }
+		public DateOnly? dob { get; set; }
 		public string? cnic { get; set; }
 		public int? age_y { get; set; }
 		public string? nationality { get; set; }
 		public string? religion { get; set; }
-		public bool? hafiz { get; set; }
+		public string? hafiz { get; set; }
 		public string? gender { get; set; }
 		public string? fname { get; set; }
 		public string? fcnic { get; set; }
@@ -33,11 +33,11 @@ namespace AvicennaFeeAPI.Models
 		public string? fprof { get; set; }
 		public string? forg { get; set; }
 		public string? fdesig { get; set; }
-		public double? fincome { get; set; }
+		public string? fincome { get; set; }
 		public string? ward_cat { get; set; }
-		public int? ward_no { get; set; }
+		public string? ward_no { get; set; }
 		public string? ward_desig { get; set; }
-		public int? ward_scale { get; set; }
+		public string? ward_scale { get; set; }
 		public string? gname { get; set; }
 		public string? gcnic { get; set; }
 		public string? gtel { get; set; }
@@ -87,16 +87,16 @@ namespace AvicennaFeeAPI.Models
 		public string? noc_file { get; set; }
 		public DateTime? lastmod { get; set; }
 		public string? lastmodip { get; set; }
-		public int? q_tmarks { get; set; }
-		public int? q_omarks { get; set; }
-		public double? q_percent { get; set; }
+		public double? q_tmarks { get; set; }
+		public double? q_omarks { get; set; }
+		public string? q_percent { get; set; }
 		public string? q_status { get; set; }
 		public string? q_institute { get; set; }
-		public int? q_year { get; set; }
+		public string? q_year { get; set; }
 		public string? et_type { get; set; }
-		public int? et_tmarks { get; set; }
-		public int? et_omarks { get; set; }
-		public double? et_percent { get; set; }
+		public double? et_tmarks { get; set; }
+		public double? et_omarks { get; set; }
+		public string? et_percent { get; set; }
 		public string? meritlist { get; set; }
 		public string? choice1 { get; set; }
 		public string? choice2 { get; set; }
@@ -109,7 +109,7 @@ namespace AvicennaFeeAPI.Models
 		public double? marks_total { get; set; }
 		public string? picture { get; set; }
 		public string? remarks { get; set; }
-		public DateTime? card_validity { get; set; }
+		public DateOnly? card_validity { get; set; }
 		public string? card_session { get; set; }
 		public string? bloodgrp { get; set; }
 		public string? feecode { get; set; }

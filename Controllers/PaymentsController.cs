@@ -12,7 +12,7 @@ namespace AvicennaFeeAPI.Controllers
 {
 
 	[ApiController]
-	[Route("api/Payments")]
+	[Route("Api/Payments")]
 	public class PaymentsController : Controller
 	{
 		private readonly ApplicationContext _context;
@@ -29,8 +29,10 @@ namespace AvicennaFeeAPI.Controllers
 		{
 			try
 			{
-				// Validate request
-				if (request == null || string.IsNullOrEmpty(request.ConsumerNumber.ToString()) || string.IsNullOrEmpty(request.BankMnemonic))
+                string BillStatus = "";
+
+                // Validate request
+                if (request == null || string.IsNullOrEmpty(request.ConsumerNumber.ToString()) || string.IsNullOrEmpty(request.BankMnemonic))
 				{
 					return BadRequest(new { ResponseCode = BillIquiryResponseCodes.InvalidData, Message = "Invalid data" });
 				}
@@ -41,82 +43,60 @@ namespace AvicennaFeeAPI.Controllers
 				{
 					return StatusCode(StatusCodes.Status500InternalServerError, new { ResponseCode = BillIquiryResponseCodes.ServiceFail, Message = "Service fail." });
 				}
-
-		    	var inquiryResult = await _context.uw_regular_semester_student_fee.Where(b => b.consumer_number == request.ConsumerNumber).FirstOrDefaultAsync();
-				//var inquiryResult = (from UwRegularFee in _context.uw_regular_semester_student_fee
-				//join StudentInfo in _context.uw_student on UwRegularFee.sid equals StudentInfo.stuid
-				//where UwRegularFee.consumer_number == request.ConsumerNumber
-				//select new { uw_regular_semester_student_fee = UwRegularFee, uw_student = StudentInfo }).SingleOrDefault();
-
-				if (inquiryResult == null)
+				else
 				{
-					return NotFound(new { ResponseCode = BillIquiryResponseCodes.ConsumerNumberNotFound, Message = "Consumer number does not exist" });
+					var inquiryResult = await _context.uw_regular_semester_student_fee.Where(b => b.consumer_number == request.ConsumerNumber).FirstOrDefaultAsync();
+
+					if (inquiryResult == null)
+					{
+						return NotFound(new { ResponseCode = BillIquiryResponseCodes.ConsumerNumberNotFound, Message = "Consumer number does not exist" });
+					}
+					else if (inquiryResult.feedeposit == true && !string.IsNullOrEmpty(inquiryResult.depositdate.ToString()))
+					{
+						return BadRequest(new { Message = "Bill already paid", ResponseCode = BillIquiryResponseCodes.BillAlreadyPaid, BillStatus = "P" });
+					}
+					else if (string.IsNullOrEmpty(inquiryResult.feedeposit.ToString()) && inquiryResult.validity_date < DateTime.Now.Date && inquiryResult.deleted != true)
+					{
+						return BadRequest(new { Message = "Bill expired", ResponseCode = BillIquiryResponseCodes.BillExpired, BillStatus = "E" });
+					}
+					else if (inquiryResult.deleted == true)
+					{
+						return BadRequest(new { Message = "Consumer number block", ResponseCode = BillIquiryResponseCodes.ConsumerNumberBlock, BillStatus = "B" });
+					}
+					else if (string.IsNullOrEmpty(inquiryResult.feedeposit.ToString()) && inquiryResult.validity_date >= DateTime.Now.Date && inquiryResult.deleted != true)
+					{
+						// Retrieve the student record using the sid from the payment record
+						var StudentData = await _context.uw_student.Where(s => s.stuid == inquiryResult.sid).FirstOrDefaultAsync();
+
+						//Total fee calculation
+						int TotalAmount = Convert.ToInt32(inquiryResult.tution) + Convert.ToInt32(inquiryResult.allied) + Convert.ToInt32(inquiryResult.arrears) - Convert.ToInt32(inquiryResult.concession);
+
+						//Generating a response
+						var ResponseBillInquiry = new InquiryResponse
+						{
+                            ResponseCode = BillIquiryResponseCodes.Success,                  
+                            ConsumerDetail = StudentData.sname.ToString() ?? string.Empty,
+                            BillStatus = "U",
+                            DueDate = inquiryResult.duedate?.ToString("yyyyMMdd") ?? string.Empty,
+							ValidityDate = inquiryResult.validity_date?.ToString("yyyyMMdd") ?? string.Empty,
+							AmountWithinDueDate = TotalAmount.ToString() ?? string.Empty,
+							AmountAfterDueDate = (TotalAmount + (inquiryResult.fine ?? 0)).ToString(),
+							BillingMonth = inquiryResult.duedate?.ToString("yyMM") ?? string.Empty,
+							DatePaid = "",
+							AmountPaid = "",
+							TranAuthId = "",
+							//Reserved = request.Reserved.
+						};
+						return Ok(new { Message = "Successful bill inquiry", Data = ResponseBillInquiry });
+					}
 				}
-
-				//Fine
-				int Fine = 0;
-				if (inquiryResult.duedate < DateTime.Now.Date)
-				{
-					Fine = Convert.ToInt32(inquiryResult.fine);
-				}
-
-			    //Bill Status
-			    string BillStatus = "";
-		     	string ResponseCode = "";
-		    	string Message = "";
-				if (inquiryResult.feedeposit == true)
-				{
-					BillStatus = "P";
-					ResponseCode = BillIquiryResponseCodes.BillAlreadyPaid;
-					Message = "Bill already paid!";
-				}
-				else if (string.IsNullOrEmpty(inquiryResult.feedeposit.ToString()) && inquiryResult.validity_date >= DateTime.Now.Date && inquiryResult.deleted != true)
-				{
-					BillStatus = "U";
-					ResponseCode = BillIquiryResponseCodes.Success;
-					Message = "Successfull bill inquiry!";
-				}
-				else if (string.IsNullOrEmpty(inquiryResult.feedeposit.ToString()) && inquiryResult.validity_date < DateTime.Now.Date && inquiryResult.deleted != true)
-				{
-					BillStatus = "E";
-					ResponseCode = BillIquiryResponseCodes.BillExpired;
-					Message = "Bill Expired!";
-				}
-				else if (inquiryResult.deleted == true)
-				{
-					BillStatus = "B";
-					ResponseCode = BillIquiryResponseCodes.ConsumerNumberBlock;
-					Message = "Consumer Number Block!";
-				}
-
-				//Total fee calculation
-				int totalAmount = Convert.ToInt32(inquiryResult.tution) + Convert.ToInt32(inquiryResult.allied) + Convert.ToInt32(inquiryResult.arrears) - Convert.ToInt32(inquiryResult.concession);
-
-				//Generating a response
-				var response = new InquiryResponse
-				{
-					ResponseCode = ResponseCode,
-					ConsumerDetail = inquiryResult.sid?.ToString() ?? string.Empty,
-					BillStatus = BillStatus,
-					DueDate = inquiryResult.duedate?.ToString("yyyyMMdd") ?? string.Empty,
-                    ValidityDate = inquiryResult.validity_date?.ToString("yyyyMMdd") ?? string.Empty,
-                    AmountWithinDueDate = totalAmount.ToString() ?? string.Empty,
-					AmountAfterDueDate = (totalAmount + Fine).ToString(),
-			        BillingMonth = inquiryResult.duedate?.ToString("yyMM") ?? string.Empty,
-					DatePaid = inquiryResult.tran_date?.ToString("yyyyMMdd") ?? string.Empty,
-					AmountPaid = inquiryResult.transaction_amount?.ToString() ?? string.Empty,
-					TranAuthId = inquiryResult.tran_auth_id?.ToString() ?? string.Empty,
-					//Reserved = request.Reserved.
-				};
-
-				return Ok ( new { ResponseCode = ResponseCode, Message = Message, Data = response });
-
-		     }
-			catch (Exception ex)
-			{
-				return StatusCode(500, new { ResponseCode = ResponseCodes.UnknownError, Message = "An unknown error occurred", Details = ex.Message });
-			}
-		}
+                return BadRequest(new { ResponseCode = BillIquiryResponseCodes.UnknownError, Message = "Unknown error" });
+		    }
+            catch (Exception ex)
+            {
+            	return StatusCode(500, new { ResponseCode = ResponseCodes.UnknownError, Message = "Unknown error", Details = ex.Message });
+            }
+        }
 
 		[Authorize]
 		[HttpPost("BillPayment")]
@@ -124,68 +104,76 @@ namespace AvicennaFeeAPI.Controllers
 		{
 			try
 			{
-				string ResponseCodeBillPayment = "";
-                string MessageBillPayment = "";
-                BillPaymentResponse ResponseBillPayment = null;
-
-                // Validate request
-                if (request == null || string.IsNullOrEmpty(request.ConsumerNumber.ToString()) || string.IsNullOrEmpty(request.BankMnemonic))
-				{
-					return BadRequest(new { ResponseCode = BillPaymentResponseCodes.InvalidData, Message = "Invalid data" });
-				}
-
-				// Check if the service is healthy
-				bool serviceFail = !await _healthCheckService.IsServiceHealthy();
-				if (serviceFail)
-				{
-					return StatusCode(StatusCodes.Status500InternalServerError, new { ResponseCode = BillPaymentResponseCodes.ServiceFail, Message = "Service fail" });
-				}
-				else
-				{
-					var PaymentResult = await _context.uw_regular_semester_student_fee.Where(b => b.consumer_number == request.ConsumerNumber).FirstOrDefaultAsync();
-
-                if (PaymentResult == null)
+				// Validate request
+				if (request == null || string.IsNullOrEmpty(request.ConsumerNumber.ToString()) || string.IsNullOrEmpty(request.BankMnemonic))
                 {
-                    return NotFound(new { ResponseCode = BillPaymentResponseCodes.ConsumerNumberNotFound, Message = "Consumer number does not exist" });
+                    return BadRequest(new { ResponseCode = BillPaymentResponseCodes.InvalidData, Message = "Invalid data" });
                 }
-                else if (PaymentResult.consumer_number == request.ConsumerNumber && PaymentResult.tran_auth_id == request.TranAuthId && PaymentResult.tran_date == request.TranDate && PaymentResult.tran_time == request.TranTime)
-				{
-					return BadRequest(new { ResponseCode = BillPaymentResponseCodes.DuplicateTransaction, Message = "Duplicate Transaction" });
-				}				
-				else if (PaymentResult.feedeposit == true && PaymentResult.tran_auth_id != null)
-				{
-                return BadRequest(new { ResponseCode = BillPaymentResponseCodes.BillAlreadyPaid, Message = "Bill already paid" });
-				}
-				else if (string.IsNullOrEmpty(PaymentResult.feedeposit.ToString()) && PaymentResult.validity_date >= DateTime.Now.Date && PaymentResult.deleted != true && PaymentResult.tran_auth_id == null)
-				{
-                if (request.ConsumerNumber > 0 && request.TranAuthId > 0 && request.TranDate != default(DateOnly) && request.TranTime != default(TimeOnly) && PaymentResult.tran_auth_id == null)
+
+                // Check if the service is healthy
+                bool serviceFail = !await _healthCheckService.IsServiceHealthy();
+                if (serviceFail)
                 {
-                    // Process the payment
-                    PaymentResult.tran_auth_id = request.TranAuthId;
-                    PaymentResult.feedeposit = true;
-                    PaymentResult.depositdate = DateTime.Now;
-                    PaymentResult.tran_date = request.TranDate;
-                    PaymentResult.tran_time = request.TranTime;
-                    PaymentResult.bank_mnemonic = request.BankMnemonic;
-                    PaymentResult.transaction_amount = request.TransactionAmount;
-
-                    _context.uw_regular_semester_student_fee.Update(PaymentResult);
-                    await _context.SaveChangesAsync();
-
-                    return Ok(new { ResponseCode = BillPaymentResponseCodes.Success, Message = "Successful bill payment" });
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { ResponseCode = BillPaymentResponseCodes.ServiceFail, Message = "Service fail" });
                 }
+                else
+                {
+                    var PaymentResult = await _context.uw_regular_semester_student_fee.Where(b => b.consumer_number == request.ConsumerNumber).FirstOrDefaultAsync();
+
+                    if (PaymentResult == null)
+                    {
+                        return NotFound(new { ResponseCode = BillPaymentResponseCodes.ConsumerNumberNotFound, Message = "Consumer number does not exist" });
+                    }
+                    else if (PaymentResult.consumer_number == request.ConsumerNumber && PaymentResult.tran_auth_id == request.TranAuthId && PaymentResult.tran_date == request.TranDate && PaymentResult.tran_time == request.TranTime)
+                    {
+                        return BadRequest(new { ResponseCode = BillPaymentResponseCodes.DuplicateTransaction, Message = "Duplicate Transaction" });
+                    }
+                    else if (PaymentResult.feedeposit == true && PaymentResult.tran_auth_id != null)
+                    {
+                        return BadRequest(new { ResponseCode = BillPaymentResponseCodes.BillAlreadyPaid, Message = "Bill already paid" });
+                    }
+                    else if (string.IsNullOrEmpty(PaymentResult.feedeposit.ToString()) && PaymentResult.validity_date >= DateTime.Now.Date && PaymentResult.deleted != true && PaymentResult.tran_auth_id == null)
+                    {
+                        if (request.ConsumerNumber != null && request.TranAuthId != null && request.TranDate != null && request.TranTime != null && PaymentResult.tran_auth_id == null)
+                        {
+                            // Retrieve the student record using the sid from the payment record
+                             var StudentData = await _context.uw_student.Where(s => s.stuid == PaymentResult.sid).FirstOrDefaultAsync();
+
+                            // Process the payment
+                            PaymentResult.tran_auth_id = request.TranAuthId;
+                            PaymentResult.feedeposit = true;
+                            PaymentResult.depositdate = DateTime.Now;
+                            PaymentResult.tran_date = request.TranDate;
+                            PaymentResult.tran_time = request.TranTime;
+                            PaymentResult.bank_mnemonic = request.BankMnemonic;
+                            PaymentResult.transaction_amount = request.TransactionAmount;
+
+                            _context.uw_regular_semester_student_fee.Update(PaymentResult);
+                            await _context.SaveChangesAsync();
+
+                            var ResponseBillPayment = new BillPaymentResponse
+                            {
+                                ResponseCode = BillPaymentResponseCodes.Success,
+                                IdentificationParameter = StudentData.sname,
+                                Reserved = ""
+                            };
+
+                            return Ok(new { Message = "Successful bill payment", Data = ResponseBillPayment });
+                        }
+                    }
+                    else if (string.IsNullOrEmpty(PaymentResult.feedeposit.ToString()) && PaymentResult.validity_date < DateTime.Now.Date && PaymentResult.deleted != true && PaymentResult.tran_auth_id == null)
+                    {
+                        return BadRequest(new { ResponseCode = BillPaymentResponseCodes.BillExpired, Message = "Bill expired" });
+                    }
                 }
-				else if (string.IsNullOrEmpty(PaymentResult.feedeposit.ToString()) && PaymentResult.validity_date < DateTime.Now.Date && PaymentResult.deleted != true && PaymentResult.tran_auth_id == null)
-				{
-				    return BadRequest(new { ResponseCode = BillPaymentResponseCodes.BillExpired, Message = "Bill expired" });
-				}				
-		    	}
-                 return BadRequest(new { ResponseCode = BillPaymentResponseCodes.UnknownError, Message = "Unknown error" });
-	    	}
+                return BadRequest(new { ResponseCode = BillPaymentResponseCodes.UnknownError, Message = "Unknown error" });
+		    }
             catch (Exception ex)
             {
-            	return StatusCode(500, new { ResponseCode = BillPaymentResponseCodes.UnknownError, Message = "Unknown error", Details = ex.Message });
+                return StatusCode(500, new { ResponseCode = BillPaymentResponseCodes.UnknownError, Message = "Unknown error", Details = ex.Message });
             }
         }
+
+
     }
 }

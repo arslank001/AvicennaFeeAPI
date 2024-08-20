@@ -6,42 +6,42 @@ namespace AvicennaFeeAPI.Models
 	public class uw_regular_semester_student_fee
 	{
 		[Key]
-		public int vno { get; set; } // Unchecked
-		public int? sid { get; set; } // Checked
-		public double? admission { get; set; } // Checked
-		public double? registration { get; set; } // Checked
-		public double? security { get; set; } // Checked
-		public double? tution { get; set; } // Checked
-		public double? allied { get; set; } // Checked
-		public double? concession { get; set; } // Checked
-		public int? fine { get; set; } // Checked
-		public double? arrears { get; set; } // Checked
-		public string? instalment { get; set; } // varchar(50) Checked
-		public DateTime? duedate { get; set; } // datetime Checked
-		public bool? isactive { get; set; } // bit Checked
-		public string? remarks { get; set; } // varchar(MAX) Checked
-		public string? csession { get; set; } // varchar(10) Checked
-		public DateTime? vdate { get; set; } // datetime Checked
-		public DateTime? depositdate { get; set; } // datetime Checked
-		public bool? feedeposit { get; set; } // bit Checkedl
-		public int? scholorship { get; set; } // Checked
-		public bool? barcode { get; set; } // bit Checked
-		public string? userid { get; set; } // varchar(50) Checked
-		public DateTime? validity_date { get; set; } // datetime Checked
-		public int? semester { get; set; } // Checked
-		public bool? baf { get; set; } // bit Checked
-		public bool? deleted { get; set; } // bit Checked
-		public int? printed { get; set; } // Checked
-		public string? dtype { get; set; } // varchar(50) Checked
-		public string? scholorshiptype { get; set; } // nvarchar(50) Checked
-		public double? Differ { get; set; } // Checked
-		public int? progid { get; set; } // Checked
-		public string? bank_name { get; set; } // nvarchar(50) Checked
-		public int? consumer_number { get; set; }
-		public string? bank_mnemonic { get; set; }
-		public int? tran_auth_id { get; set; }
-		public int? transaction_amount { get; set; }
-		public DateOnly? tran_date { get; set; }
-	    public TimeOnly? tran_time { get; set; }
-}
+        public int vno { get; set; }
+        public int? sid { get; set; }
+        public double? admission { get; set; }
+        public double? registration { get; set; }
+        public double? security { get; set; }
+        public double? tution { get; set; }
+        public double? allied { get; set; }
+        public double? concession { get; set; }
+        public int? fine { get; set; }
+        public double? arrears { get; set; }
+        public string? instalment { get; set; }
+        public DateTime? duedate { get; set; }
+        public bool? isactive { get; set; }
+        public string? remarks { get; set; }
+        public string? csession { get; set; }
+        public DateTime? vdate { get; set; }
+        public DateTime? depositdate { get; set; }
+        public bool? feedeposit { get; set; }
+        public int? scholorship { get; set; }
+        public bool? barcode { get; set; }
+        public string? userid { get; set; }
+        public DateTime? validity_date { get; set; }
+        public int? semester { get; set; }
+        public bool? baf { get; set; }
+        public bool? deleted { get; set; }
+        public int? printed { get; set; }
+        public string? dtype { get; set; }
+        public string? scholorshiptype { get; set; }
+        public double? differ { get; set; }
+        public int? progid { get; set; }
+        public string? bank_name { get; set; }
+        public string? consumer_number { get; set; }
+        public string? bank_mnemonic { get; set; }
+        public string? tran_auth_id { get; set; }
+        public string? transaction_amount { get; set; }
+        public string? tran_date { get; set; }
+        public string? tran_time { get; set; }
+    }
 }
