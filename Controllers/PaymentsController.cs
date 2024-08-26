@@ -79,13 +79,13 @@ namespace AvicennaFeeAPI.Controllers
                             BillStatus = "U",
                             DueDate = inquiryResult.duedate?.ToString("yyyyMMdd") ?? string.Empty,
 							ValidityDate = inquiryResult.validity_date?.ToString("yyyyMMdd") ?? string.Empty,
-							AmountWithinDueDate = TotalAmount.ToString() ?? string.Empty,
-							AmountAfterDueDate = (TotalAmount + (inquiryResult.fine ?? 0)).ToString(),
+							AmountWithinDueDate = FormatAmount(TotalAmount).ToString() ?? string.Empty,
+							AmountAfterDueDate = FormatAmount(TotalAmount + (inquiryResult.fine ?? 0)).ToString(),
 							BillingMonth = inquiryResult.duedate?.ToString("yyMM") ?? string.Empty,
 							DatePaid = "",
 							AmountPaid = "",
 							TranAuthId = "",
-							//Reserved = request.Reserved.
+							Reserved = ""
 						};
 						return Ok(new { Message = "Successful bill inquiry", Data = ResponseBillInquiry });
 					}
@@ -111,8 +111,8 @@ namespace AvicennaFeeAPI.Controllers
                 }
 
                 // Check if the service is healthy
-                bool serviceFail = !await _healthCheckService.IsServiceHealthy();
-                if (serviceFail)
+                bool ServiceFail = !await _healthCheckService.IsServiceHealthy();
+                if (ServiceFail)
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, new { ResponseCode = BillPaymentResponseCodes.ServiceFail, Message = "Service fail" });
                 }
@@ -146,7 +146,7 @@ namespace AvicennaFeeAPI.Controllers
                             PaymentResult.tran_date = request.TranDate;
                             PaymentResult.tran_time = request.TranTime;
                             PaymentResult.bank_mnemonic = request.BankMnemonic;
-                            PaymentResult.transaction_amount = request.TransactionAmount;
+                            PaymentResult.transaction_amount = RemoveExtraZeros(request.TransactionAmount);
 
                             _context.uw_regular_semester_student_fee.Update(PaymentResult);
                             await _context.SaveChangesAsync();
@@ -175,5 +175,33 @@ namespace AvicennaFeeAPI.Controllers
         }
 
 
+        string FormatAmount(decimal amount)
+        {
+            // Multiply by 100 to shift decimal places (e.g., 120.00 becomes 12000)
+            long AmountInMinorUnits = (long)(amount * 100);
+
+            // Determine the sign (positive or negative)
+            string Sign = AmountInMinorUnits >= 0 ? "+" : "-";
+
+            // Convert the absolute value of the amount to a string
+            string AmountString = Math.Abs(AmountInMinorUnits).ToString();
+
+            // Pad with zeros on the left to make it 13 digits long
+            string PaddedAmount = AmountString.PadLeft(13, '0');
+
+            // Combine the sign with the padded amount
+            return Sign + PaddedAmount;
+        }
+
+        string RemoveExtraZeros(string TranAmount)
+        {
+            // Remove the two trailing zeros from the right side
+            string withoutTrailingZeros = TranAmount.Substring(0, TranAmount.Length - 2);
+
+            // Trim leading zeros from the left side
+            string trimmedAmount = withoutTrailingZeros.TrimStart('0');
+
+            return trimmedAmount;
+        }
     }
 }
