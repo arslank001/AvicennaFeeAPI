@@ -94,7 +94,7 @@ namespace AvicennaFeeAPI.Controllers
 		    }
             catch (Exception ex)
             {
-            	return StatusCode(500, new { ResponseCode = ResponseCodes.UnknownError, Message = "Unknown error", Details = ex.Message });
+            	return StatusCode(500, new { ResponseCode = BillIquiryResponseCodes.UnknownError, Message = "Unknown error", Details = ex.Message });
             }
         }
 
