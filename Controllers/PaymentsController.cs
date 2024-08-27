@@ -138,7 +138,7 @@ namespace AvicennaFeeAPI.Controllers
                         {
                             // Retrieve the student record using the sid from the payment record
                              var StudentData = await _context.uw_student.Where(s => s.stuid == PaymentResult.sid).FirstOrDefaultAsync();
-
+                            
                             // Process the payment
                             PaymentResult.tran_auth_id = request.TranAuthId;
                             PaymentResult.feedeposit = true;
