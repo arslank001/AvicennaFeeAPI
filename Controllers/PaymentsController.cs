@@ -53,7 +53,7 @@ namespace AvicennaFeeAPI.Controllers
 					}
 					else if (inquiryResult.feedeposit == true && !string.IsNullOrEmpty(inquiryResult.depositdate.ToString()))
 					{
-						return BadRequest(new { Message = "Bill already paid", ResponseCode = BillIquiryResponseCodes.BillAlreadyPaid, BillStatus = "P" });
+						return Ok(new { Message = "Bill already paid", ResponseCode = BillIquiryResponseCodes.BillAlreadyPaid, BillStatus = "P" });
 					}
 					else if (string.IsNullOrEmpty(inquiryResult.feedeposit.ToString()) && inquiryResult.validity_date < DateTime.Now.Date && inquiryResult.deleted != true)
 					{
@@ -61,7 +61,7 @@ namespace AvicennaFeeAPI.Controllers
 					}
 					else if (inquiryResult.deleted == true)
 					{
-						return BadRequest(new { Message = "Consumer number block", ResponseCode = BillIquiryResponseCodes.ConsumerNumberBlock, BillStatus = "B" });
+                        return  StatusCode(403, new { Message = "Consumer number block", ResponseCode = BillIquiryResponseCodes.ConsumerNumberBlock, BillStatus = "B" });
 					}
 					else if (string.IsNullOrEmpty(inquiryResult.feedeposit.ToString()) && inquiryResult.validity_date >= DateTime.Now.Date && inquiryResult.deleted != true)
 					{
@@ -71,8 +71,19 @@ namespace AvicennaFeeAPI.Controllers
 						//Total fee calculation
 						int TotalAmount = Convert.ToInt32(inquiryResult.tution) + Convert.ToInt32(inquiryResult.allied) + Convert.ToInt32(inquiryResult.arrears) - Convert.ToInt32(inquiryResult.concession);
 
-						//Generating a response
-						var ResponseBillInquiry = new InquiryResponse
+                        // Determine the amount to be paid based on the due date
+                        string AmountPaid;
+                        if (inquiryResult.duedate.HasValue && DateTime.Now > inquiryResult.duedate.Value)
+                        {
+                            AmountPaid = FormatAmount(TotalAmount + (inquiryResult.fine ?? 0)).ToString();
+                        }
+                        else
+                        {
+                            AmountPaid = FormatAmount(TotalAmount).ToString();
+                        }
+
+                        //Generating a response
+                        var ResponseBillInquiry = new InquiryResponse
 						{
                             ResponseCode = BillIquiryResponseCodes.Success,                  
                             ConsumerDetail = StudentData.sname.ToString() ?? string.Empty,
@@ -82,8 +93,8 @@ namespace AvicennaFeeAPI.Controllers
 							AmountWithinDueDate = FormatAmount(TotalAmount).ToString() ?? string.Empty,
 							AmountAfterDueDate = FormatAmount(TotalAmount + (inquiryResult.fine ?? 0)).ToString(),
 							BillingMonth = inquiryResult.duedate?.ToString("yyMM") ?? string.Empty,
-							DatePaid = "",
-							AmountPaid = "",
+							DatePaid = inquiryResult.duedate?.ToString("yyyyMMdd") ?? string.Empty,
+							AmountPaid = AmountPaid,
 							TranAuthId = "",
 							Reserved = ""
 						};
@@ -94,7 +105,7 @@ namespace AvicennaFeeAPI.Controllers
 		    }
             catch (Exception ex)
             {
-            	return StatusCode(500, new { ResponseCode = BillIquiryResponseCodes.UnknownError, Message = "Unknown error", Details = ex.Message });
+            	return BadRequest( new { ResponseCode = BillIquiryResponseCodes.UnknownError, Message = "Unknown error", Details = ex.Message });
             }
         }
 
@@ -126,11 +137,11 @@ namespace AvicennaFeeAPI.Controllers
                     }
                     else if (PaymentResult.consumer_number == request.ConsumerNumber && PaymentResult.tran_auth_id == request.TranAuthId && PaymentResult.tran_date == request.TranDate && PaymentResult.tran_time == request.TranTime)
                     {
-                        return BadRequest(new { ResponseCode = BillPaymentResponseCodes.DuplicateTransaction, Message = "Duplicate Transaction" });
+                        return Ok(new { ResponseCode = BillPaymentResponseCodes.DuplicateTransaction, Message = "Duplicate Transaction" });
                     }
-                    else if (PaymentResult.feedeposit == true && PaymentResult.tran_auth_id != null)
+                    else if (PaymentResult.feedeposit == true && PaymentResult.depositdate != null)
                     {
-                        return BadRequest(new { ResponseCode = BillPaymentResponseCodes.BillAlreadyPaid, Message = "Bill already paid" });
+                        return Ok(new { ResponseCode = BillPaymentResponseCodes.BillAlreadyPaid, Message = "Bill already paid" });
                     }
                     else if (string.IsNullOrEmpty(PaymentResult.feedeposit.ToString()) && PaymentResult.validity_date >= DateTime.Now.Date && PaymentResult.deleted != true && PaymentResult.tran_auth_id == null)
                     {
@@ -163,14 +174,14 @@ namespace AvicennaFeeAPI.Controllers
                     }
                     else if (string.IsNullOrEmpty(PaymentResult.feedeposit.ToString()) && PaymentResult.validity_date < DateTime.Now.Date && PaymentResult.deleted != true && PaymentResult.tran_auth_id == null)
                     {
-                        return BadRequest(new { ResponseCode = BillPaymentResponseCodes.BillExpired, Message = "Bill expired" });
+                        return Ok(new { ResponseCode = BillPaymentResponseCodes.BillExpired, Message = "Bill expired" });
                     }
                 }
                 return BadRequest(new { ResponseCode = BillPaymentResponseCodes.UnknownError, Message = "Unknown error" });
 		    }
             catch (Exception ex)
             {
-                return StatusCode(500, new { ResponseCode = BillPaymentResponseCodes.UnknownError, Message = "Unknown error", Details = ex.Message });
+                return BadRequest( new { ResponseCode = BillPaymentResponseCodes.UnknownError, Message = "Unknown error", Details = ex.Message });
             }
         }
 
