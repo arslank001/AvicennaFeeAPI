@@ -23,14 +23,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Usage
-//var secretKey1 = SecretKeyGenerator.GenerateSecretKey();
-//Console.WriteLine(secretKey1);
-
-
-// Retrieve the secret key from environment variables
-//var secretKey = "J6lSRyYu2wT9l4Ol4JoKmush1Oy+TM8Kp3jEccexCBI=";
-
 var secretKey =  builder.Configuration["JwtSettings:SecretKey"];
 if (string.IsNullOrEmpty(secretKey))
 {
@@ -58,8 +50,6 @@ builder.Services.AddAuthentication(options =>
 		ValidateAudience = false,
 	};
 });
-
-
 
 var app = builder.Build();
 
