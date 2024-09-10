@@ -14,5 +14,5 @@ The University of Wah Fee API is a RESTful service designed to facilitate secure
 - **Bill Inquiry:** /Api/Payments/BillInquiry - Fetch detailed bill information.
 - **Bill Payment:** /Api/Payments/BillPayment - Process payments securely.
 
-### Documentation: 
+## Documentation: 
 Comprehensive API documentation available on request.
