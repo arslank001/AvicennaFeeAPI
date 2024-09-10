@@ -14,7 +14,7 @@
 *.userprefs
 
 
-# Ignore appsettings files with sensitive information
+# Ignore files with sensitive information
 SecretKeyGenerator.cs
 appsettings.json
 appsettings.*.json
